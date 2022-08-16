@@ -1,0 +1,61 @@
+FROM centos:7.6.1810 AS base
+RUN yum install -y https://kojipkgs.fedoraproject.org//packages/zlib/1.2.11/19.fc30/x86_64/zlib-1.2.11-19.fc30.x86_64.rpm
+
+RUN yum install -y epel-release
+RUN yum install -y python-pip
+RUN pip install pip==v19.0
+RUN pip uninstall click
+RUN pip install click==v7.0 pyusb babel==v0.9.6 decorator==v3.4.0 beautifulsoup4
+RUN yum install -y python2-click
+RUN pip install XlsxWriter python-stdnum pyserial ofxparse passlib
+RUN yum install -y python-psycogreen
+RUN pip install pypdf python-chart babel>=1.0
+RUN pip install --upgrade pip
+RUN yum install -y python-setuptools
+RUN yum upgrade -y python-setuptools
+RUN pip install -U setuptools
+RUN pip install suds-jurko soupsieve==1.9.5
+RUN pip install soupsieve==1.9.5
+RUN pip uninstall -y beautifulsoup4
+RUN pip install beautifulsoup4
+RUN pip uninstall -y babel
+RUN pip install babel==v2.0
+RUN yum install -y python-ldap
+RUN pip install babel==v1.0 python-stdnum urllib3==1.21.1 idna==2.5 chardet==3.0.2 certifi==2017.4.17 qrcode pyserial pypdf python-chart psycogreen passlib ofxparse requests
+RUN yum install -y https://repo.mybahmni.org/releases/bahmni-installer-0.93-197.noarch.rpm
+RUN rm -f /opt/pgdg-redhat-repo-latest.noarch.rpm
+RUN rm -f /opt/pgdg-redhat-repo-42.0-23.noarch.rpm
+RUN yum install -y wget
+RUN cd /opt && wget https://download.postgresql.org/pub/repos/yum/reporpms/EL-7-x86_64/pgdg-redhat-repo-latest.noarch.rpm --no-check-certificate
+
+COPY ./setup.yml /etc/bahmni-installer/setup.yml
+
+RUN sed -i '/^\[pacs-integration\].*/a localhost' /etc/bahmni-installer/local
+RUN sed -i '/^\[pacs-integration-db\].*/a localhost' /etc/bahmni-installer/local
+RUN sed -i '/^\[dcm4chee\].*/a localhost' /etc/bahmni-installer/local
+RUN sed -i '/^\[dcm4chee-db\].*/a localhost' /etc/bahmni-installer/local
+
+RUN echo "export BAHMNI_INVENTORY=local" >> ~/.bashrc
+RUN source ~/.bashrc
+
+RUN yum install -y sudo
+ENV BAHMNI_INVENTORY=local
+
+RUN yum install -y selinux-policy-targeted
+RUN yum install -y selinux-policy-devel policycoreutils
+RUN touch /.autorelabel
+
+ENV container docker
+RUN yum -y install systemd; yum clean all; \
+(cd /lib/systemd/system/sysinit.target.wants/; for i in *; do [ $i == systemd-tmpfiles-setup.service ] || rm -f $i; done); \
+rm -f /lib/systemd/system/multi-user.target.wants/*;\
+rm -f /etc/systemd/system/*.wants/*;\
+rm -f /lib/systemd/system/local-fs.target.wants/*; \
+rm -f /lib/systemd/system/sockets.target.wants/*udev*; \
+rm -f /lib/systemd/system/sockets.target.wants/*initctl*; \
+rm -f /lib/systemd/system/basic.target.wants/*;\
+rm -f /lib/systemd/system/anaconda.target.wants/*;
+VOLUME [ "/sys/fs/cgroup" ]
+RUN yum install -y ntp
+RUN systemctl enable ntpd
+CMD ["/usr/sbin/init"]

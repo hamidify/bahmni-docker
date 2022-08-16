@@ -1,0 +1,4 @@
+timezone: Africa/Addis_Ababa
+implementation_name: default
+selinux_state: disabled
+bahmni_repo_url: http://repo.mybahmni.org/releases/
